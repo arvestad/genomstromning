@@ -16,6 +16,18 @@ def read_programstudents(filename):
     with open(filename, 'r') as f:
         lines = f.readlines()
     result = {}
+
+    program = None
+    for line in lines[:9]:
+        elems = line.split(';')
+        if len(elems) != 2:
+            continue
+        elif elems[0] == '"Utbildningskod"':
+            program = elems[1].strip('"').split()[0]
+    else:
+        if not program:
+            raise Exception('The student file is not generated the correct way. Expected a line like "Utbildningskod";"NMATK Kandidatprogram i matematik" eller liknande bland de första raderna.')
+
     for line in lines[9:]:
         data = line.strip().split(';')
         if len(data) < 5:
@@ -26,7 +38,7 @@ def read_programstudents(filename):
         for key, val in zip(headers[1:], data[1:]):
             result[pnr][key] = val.strip('"')
 
-    return result
+    return program, result
 
 
 def read_course_results(filename):
@@ -130,7 +142,7 @@ def create_student_bars(students, results, program):
 
     ranked_students = sorted(total_scores.keys(), key=lambda s: total_scores[s], reverse=True)
 
-    index = np.arange(len(students)) + 0.3
+    index = np.arange(len(students))
     bar_width = 0.4
 
     plt.clf()
@@ -140,6 +152,8 @@ def create_student_bars(students, results, program):
         ax.barh(index, student_results, bar_width, left=offset, label=course)
         offset += student_results
     ax.legend()
+    plt.xlabel('hp')
+    plt.ylabel('student (anonymt)')
     plt.title(f'{program}: Resultat per student och kurs')
     plt.savefig(filename)
 
@@ -161,7 +175,7 @@ def create_histogram(data_dict, program):
 
 def setup_arguments_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument('program', help='For example NMATK, NMDVK, etc. Used to create output filename(s).')
+    #parser.add_argument('program', help='For example NMATK, NMDVK, etc. Used to create output filename(s).')
     parser.add_argument('studentfile', help='Student file')
     parser.add_argument('results', help='Results file')
     return parser.parse_args(sys.argv[1:])
@@ -170,12 +184,12 @@ def setup_arguments_parser():
 
 def main():
     args = setup_arguments_parser()
-    students = read_programstudents(args.studentfile)
+    program, students = read_programstudents(args.studentfile)
     results = read_course_results(args.results)
     scores = compute_scores_per_period(students, results)
 
-    create_histogram(scores, args.program)
-    create_student_bars(students, results, args.program)
+    #create_histogram(scores, args.program)
+    create_student_bars(students, results, program)
     
 
     for pnr, score in scores.items():
