@@ -98,7 +98,7 @@ def compute_scores_per_period(students, results):
     return scores
 
 
-def get_course_codes(results):
+def get_course_codes(students, results):
     '''
     Return a list of course codes, sorted by the order of total hp generated.
     This should place MM2001 first, but it is discovered in the data.
@@ -109,13 +109,14 @@ def get_course_codes(results):
             if code not in codes:
                 codes[code] = 0
             for module, hp in res[code].items():
-                codes[code] += hp
+                if pnr in students:
+                    codes[code] += hp
     return list(sorted(codes.keys(), key=lambda code: codes[code], reverse=True))
 
 
 def compute_student_scores_per_course(students, results):
     student_scores = {}
-    codes = get_course_codes(results)
+    codes = get_course_codes(students, results)
 
     scores = dict()             # Map course code to student points
     for code in codes:
@@ -192,9 +193,8 @@ def main():
     #create_histogram(scores, args.program)
     create_student_bars(students, results, program)
     
-
-    for pnr, score in scores.items():
-        print(pnr, score)
+    # for pnr, score in scores.items():
+    #     print(pnr, score)
 
 if __name__ == '__main__':
     main()
