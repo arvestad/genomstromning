@@ -21,7 +21,6 @@ requirements = [
 
 setuptools.setup(
     name="genomstromning",
-    version=__version__,
     author="Lars Arvestad",
     author_email="arve@math.su.se",
     description="Generate figures showing student retention",
