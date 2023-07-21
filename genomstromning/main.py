@@ -3,6 +3,7 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
+from .version import __version__
 
 
 def read_programstudents(filename):
@@ -194,6 +195,7 @@ def create_histogram(data_dict, program):
 def setup_arguments_parser():
     parser = argparse.ArgumentParser()
     #parser.add_argument('program', help='For example NMATK, NMDVK, etc. Used to create output filename(s).')
+    parser.add_argument('--version', action='version', version=f'{__version__}')
     parser.add_argument('studentfile', help='Student file')
     parser.add_argument('results', nargs='+', help='Results file(s)')
     return parser.parse_args(sys.argv[1:])
