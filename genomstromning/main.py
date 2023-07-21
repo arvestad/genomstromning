@@ -42,7 +42,7 @@ def read_programstudents(filename):
     return program, result
 
 
-def read_course_results(filename):
+def read_course_results(filenames):
     '''
     Read students' course results.
 
@@ -51,30 +51,32 @@ def read_course_results(filename):
 
     '''
     headers = ['Personnummer', None, None, 'Kurskod', 'Kurs', 'Kurspoäng', 'Kurstillfälle', 'Modulkod', 'Modul', 'Modulpoäng', 'Betyg', 'Datum']
-    with open(filename, 'r') as f:
-        lines = f.readlines()
     result = {}
-    for line in lines[8:]:
-        data = line.strip().split(';')
-        if len(data) < 5:
-            continue
+
+    for filename in filenames:
+        with open(filename, 'r') as f:
+            lines = f.readlines()
+        for line in lines[8:]:
+            data = line.strip().split(';')
+            if len(data) < 5:
+                continue
             
-        pnr = data[0].strip('"')
-        if pnr not in result:
-            result[pnr] = dict()
+            pnr = data[0].strip('"')
+            if pnr not in result:
+                result[pnr] = dict()
 
-        line = dict()
-        for key, val in zip(headers[1:], data[1:]):
-            if key:
-                line[key] = val.strip('"')
+            line = dict()
+            for key, val in zip(headers[1:], data[1:]):
+                if key:
+                    line[key] = val.strip('"')
 
-        kurskod = line['Kurskod']
-        if kurskod not in result[pnr]:
-            result[pnr][kurskod] = dict()
-        if len(line['Modulkod']) > 1:
-            modulkod = line['Modulkod']
-            poang = line['Modulpoäng'].replace(',', '.')
-            result[pnr][kurskod][modulkod] = float(poang)
+            kurskod = line['Kurskod']
+            if kurskod not in result[pnr]:
+                result[pnr][kurskod] = dict()
+            if len(line['Modulkod']) > 1:
+                modulkod = line['Modulkod']
+                poang = line['Modulpoäng'].replace(',', '.')
+                result[pnr][kurskod][modulkod] = float(poang)
     return result
 
 
@@ -129,7 +131,18 @@ def compute_student_scores_per_course(students, results):
             scores[code][pnr] = sc
     return scores
         
-        
+
+def colors_and_hatches():
+    prop_cycle = plt.rcParams['axes.prop_cycle']
+    colors = prop_cycle.by_key()['color']    
+
+    hatches = [' ', '//', '\\\\', '+']
+
+    for hatch in hatches:
+        for color in colors:
+            yield color, hatch
+
+    
 
 
 def create_student_bars(students, results, program):
@@ -145,15 +158,18 @@ def create_student_bars(students, results, program):
     ranked_students = sorted(total_scores.keys(), key=lambda s: total_scores[s], reverse=True)
 
     index = np.arange(len(students))
-    bar_width = 0.4
+    bar_width = 0.6
+
+    style = colors_and_hatches()
 
     plt.clf()
-    fix, ax = plt.subplots()
+    fig, ax = plt.subplots(layout='constrained')
     for course in scores:
         student_results = np.array([scores[course][pnr] for pnr in ranked_students])
-        ax.barh(index, student_results, bar_width, left=offset, label=course)
+        color, hatch = next(style)
+        ax.barh(index, student_results, bar_width, left=offset, label=course, color=color, hatch=hatch)
         offset += student_results
-    ax.legend()
+    fig.legend(loc='outside right upper')
     plt.xlabel('hp')
     plt.ylabel('student (anonymt)')
     plt.title(f'{program}: Resultat per student och kurs')
@@ -179,7 +195,7 @@ def setup_arguments_parser():
     parser = argparse.ArgumentParser()
     #parser.add_argument('program', help='For example NMATK, NMDVK, etc. Used to create output filename(s).')
     parser.add_argument('studentfile', help='Student file')
-    parser.add_argument('results', help='Results file')
+    parser.add_argument('results', nargs='+', help='Results file(s)')
     return parser.parse_args(sys.argv[1:])
 
 
