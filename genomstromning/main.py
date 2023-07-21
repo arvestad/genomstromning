@@ -1,5 +1,4 @@
 import argparse
-import math
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
@@ -17,7 +16,7 @@ def read_programstudents(filename):
     headers = ["Personnummer (Student)", "Förnamn", "Efternamn", "Programkod", "Program"]
     with open(filename, 'r') as f:
         lines = f.readlines()
-    result = {}
+    student_info = {}
 
     program = None
     for line in lines[:9]:
@@ -36,11 +35,11 @@ def read_programstudents(filename):
             continue
             
         pnr = data[0].strip('"')
-        result[pnr] = dict()
+        student_info[pnr] = dict()
         for key, val in zip(headers[1:], data[1:]):
-            result[pnr][key] = val.strip('"')
+            student_info[pnr][key] = val.strip('"')
 
-    return program, result
+    return program, student_info
 
 
 def read_course_results(filenames):
@@ -75,9 +74,11 @@ def read_course_results(filenames):
             if kurskod not in result[pnr]:
                 result[pnr][kurskod] = dict()
             if len(line['Modulkod']) > 1:
-                modulkod = line['Modulkod']
-                poang = line['Modulpoäng'].replace(',', '.')
-                result[pnr][kurskod][modulkod] = float(poang)
+                grade = line['Betyg']
+                if grade != 'F' and grade != 'FX':
+                    modulkod = line['Modulkod']
+                    poang = line['Modulpoäng'].replace(',', '.')
+                    result[pnr][kurskod][modulkod] = float(poang)
     return result
 
 
@@ -184,7 +185,7 @@ def create_histogram(data_dict, program):
     '''
     filename = program + '_hp_per_year.pdf'
     values = data_dict.values()
-    plt.hist(values, bins=10, range=(0, max(values))) # adjust the number of bins as needed
+    plt.hist(values, bins=10, range=(0, max(values)))  # adjust the number of bins as needed
     plt.xlim = max(values)
     plt.xlabel('hp')
     plt.ylabel('Antal')
@@ -196,6 +197,7 @@ def setup_arguments_parser():
     parser = argparse.ArgumentParser()
     #parser.add_argument('program', help='For example NMATK, NMDVK, etc. Used to create output filename(s).')
     parser.add_argument('--version', action='version', version=f'{__version__}')
+    parser.add_argument('-s', '--students', action='store_true', help='Print student result summary to stdout')
     parser.add_argument('studentfile', help='Student file')
     parser.add_argument('results', nargs='+', help='Results file(s)')
     return parser.parse_args(sys.argv[1:])
@@ -211,8 +213,11 @@ def main():
     #create_histogram(scores, args.program)
     create_student_bars(students, results, program)
     
-    # for pnr, score in scores.items():
-    #     print(pnr, score)
+    if args.students:
+        for pnr, score in sorted(scores.items(), key=lambda ps: ps[1]):
+            fname = students[pnr]['Förnamn']
+            lname = students[pnr]['Efternamn']
+            print(f'{score:5} {fname} {lname}')
 
 if __name__ == '__main__':
     main()
