@@ -21,3 +21,12 @@ Läs data från Ladok. Du behöver två utdrag från fliken "Utdata".
 ## Användning
 
 Se `genomstromning -h`.
+
+
+
+## Produktion
+
+För indata till översikt över HÅP-produktion, hämta hem en rapport (från menyn _Uppföljning_)
+över _Helårsprestationer_. Välj "(403) Matematiska institutionen" i rutan _Organisationsenhet_,
+"Grund och avancerad nivå" i _Utbildningstypsgrupp_, och gruppera (längst ner) efter "Kurstillfälle".
+Exportera resultatet, inte underlaget.
