@@ -1,0 +1,40 @@
+[project]
+name = "genomstromning"
+authors = [
+	{name = "Lars Arvestad", email = "arve@math.su.se"}
+]
+
+description="Generate figures showing student retention"
+readme = "README.md"
+license = {text = "GNU General Public License v3 (GPLv3)"}
+
+classifiers = [
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+        "Operating System :: OS Independent",
+]
+dynamic = ["version"]
+
+dependencies = [
+        "matplotlib"
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+
+[project.scripts]
+genomstromning = "genomstromning:main"
+
+
+[project.urls]
+homepage = "https://github.com/arvestad/genomstromning"
+
+
+[tool.setuptools]
+packages = ["genomstromning"]
+
+
+[tool.setuptools.dynamic]
+version = {attr = "genomstromning.__version__"}
