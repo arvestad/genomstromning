@@ -1,4 +1,5 @@
 import argparse
+from datetime import date
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
@@ -23,7 +24,7 @@ def read_programstudents(filename):
         elems = line.split(';')
         if len(elems) != 2:
             continue
-        elif elems[0] == '"Utbildningskod"':
+        elif elems[0] == '"Utbildningskod"' or elems[0] == '"Utbildning"':
             program = elems[1].strip('"').split()[0]
     else:
         if not program:
@@ -42,7 +43,7 @@ def read_programstudents(filename):
     return program, student_info
 
 
-def read_course_results(filenames):
+def read_course_results(filenames, cutoff_date=date.today()):
     '''
     Read students' course results.
 
@@ -69,6 +70,11 @@ def read_course_results(filenames):
             for key, val in zip(headers[1:], data[1:]):
                 if key:
                     line[key] = val.strip('"')
+
+            if 'Datum' in line:
+                res_date = date.fromisoformat(line['Datum'])
+                if res_date > cutoff_date: # We ignore later results
+                    continue
 
             kurskod = line['Kurskod']
             if kurskod not in result[pnr]:
@@ -115,7 +121,10 @@ def get_course_codes(students, results):
             for module, hp in res[code].items():
                 if pnr in students:
                     codes[code] += hp
-    return list(sorted(codes.keys(), key=lambda code: codes[code], reverse=True))
+
+    sorted_codes = sorted(codes.keys(), key=lambda code: codes[code], reverse=True)
+    non_zero_credits = filter(lambda code: codes[code] > 0, sorted_codes)
+    return list(non_zero_credits)
 
 
 def compute_student_scores_per_course(students, results):
@@ -144,15 +153,57 @@ def colors_and_hatches():
         for color in colors:
             yield color, hatch
 
-    
+course_color_and_hatch = {
+    'MM2001': ('#1f77b4', ' '),
+    'MM2003': ('#1f77b4', '**'),
+    'MM5012': ('#ff7f0e', ' '),
+    'DA2004': ('#2ca02c', ' '),
+    'DA2005': ('#2ca02c', ' '),
+    'MM5013': ('#d62728', ' '),
+    'DA3018': ('#9467bd', ' '),
+    'DA4006': ('#9467bd', '**'),
+    'MM5016': ('#8c564b', ' '),
+    'MM5010': ('#e377c2', ' '),
+    'MM5011': ('#e377c2', '//'),
+    'MM5015': ('#1f77b4', '//'),
+    'MT3001': ('#7f7f7f', ' '),
+    'MT4001': ('#bcbd22', ' '),
+    'MT4007': ('#17becf', ' '),
+}
+available = [
+    '#1f77b4',
+    '#1f77b4',
+    '#ff7f0e',
+    '#2ca02c',
+    '#d62728',
+    '#9467bd',
+    '#9467bd',
+    '#8c564b',
+    '#e377c2',
+    '#e377c2',
+    '#7f7f7f',
+    '#bcbd22',
+    '#17becf'        
+]
+
+def colors_and_hatches_by_course(code):
+
+    if code in course_color_and_hatch:
+        return course_color_and_hatch[code]
+    else:
+        print(f'Added color for {code}', file=sys.stderr)
+        color = available.pop()
+        hatch = '\\\\'
+        course_color_and_hatch[code] = (color, hatch)
+        return color, hatch    
 
 
-def create_student_bars(students, results, program):
+def create_student_bars(students, results, title):
     '''
     Create bar diagrams where each bar is a student and each course adds a rectangle 
     to the bar. Sort by bar height.
     '''
-    filename = program + '_per_student.pdf'
+    filename = title + '_per_student.pdf'
     offset = np.zeros(len(students))
     scores = compute_student_scores_per_course(students, results)
     total_scores = compute_scores_per_period(students, results)
@@ -162,19 +213,20 @@ def create_student_bars(students, results, program):
     index = np.arange(len(students))
     bar_width = 0.6
 
-    style = colors_and_hatches()
+    #style = colors_and_hatches()
 
     plt.clf()
     fig, ax = plt.subplots(layout='constrained')
     for course in scores:
         student_results = np.array([scores[course][pnr] for pnr in ranked_students])
-        color, hatch = next(style)
+        #color, hatch = next(style)
+        color, hatch = colors_and_hatches_by_course(course)
         ax.barh(index, student_results, bar_width, left=offset, label=course, color=color, hatch=hatch)
         offset += student_results
     fig.legend(loc='outside right upper')
     plt.xlabel('hp')
     plt.ylabel('student (anonymt)')
-    plt.title(f'{program}: Resultat per student och kurs')
+    plt.title(f'{title}: Resultat per student och kurs')
     plt.savefig(filename)
 
 
@@ -197,7 +249,9 @@ def setup_arguments_parser():
     parser = argparse.ArgumentParser()
     #parser.add_argument('program', help='For example NMATK, NMDVK, etc. Used to create output filename(s).')
     parser.add_argument('--version', action='version', version=f'{__version__}')
+    parser.add_argument('-d', '--date', help='Give a date in ISO format (YYYY-MM-DD) so results after this date are ignored, for retrospective comparisons.')
     parser.add_argument('-s', '--students', action='store_true', help='Print student result summary to stdout')
+    parser.add_argument('-t', '--title', help='Title of diagram. Without this option, a title is inferred.')
     parser.add_argument('studentfile', help='Student file')
     parser.add_argument('results', nargs='+', help='Results file(s)')
     return parser.parse_args(sys.argv[1:])
@@ -206,12 +260,17 @@ def setup_arguments_parser():
 
 def main():
     args = setup_arguments_parser()
+    if args.date:
+        cutoff_date = date.fromisoformat(args.date)
+
     program, students = read_programstudents(args.studentfile)
-    results = read_course_results(args.results)
+    results = read_course_results(args.results, cutoff_date)
     scores = compute_scores_per_period(students, results)
 
-    #create_histogram(scores, args.program)
-    create_student_bars(students, results, program)
+    if args.title:
+        create_student_bars(students, results, args.title)
+    else:
+        create_student_bars(students, results, program)
     
     if args.students:
         for pnr, score in sorted(scores.items(), key=lambda ps: ps[1]):
