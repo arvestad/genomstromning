@@ -39,7 +39,8 @@ Se `genomstromning -h`.
 
 ## Produktion
 
-För indata till översikt över HÅP-produktion, hämta hem en rapport (från menyn _Uppföljning_)
-över _Helårsprestationer_. Välj "(403) Matematiska institutionen" i rutan _Organisationsenhet_,
-"Grund och avancerad nivå" i _Utbildningstypsgrupp_, och gruppera (längst ner) efter "Kurstillfälle".
-Exportera resultatet, inte underlaget.
+Från Ladoks entresida, välj _Utdata_ i övre menyn och klick _Resultat_. 
+Välj kurser att studera i väljaren _Utbildningskod_, välj resultatperiod, samt
+se till att klicka i "visa moduler" (eller liknande).
+
+Exportera slutligen till Excel.
