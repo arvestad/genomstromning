@@ -262,6 +262,8 @@ def main():
     args = setup_arguments_parser()
     if args.date:
         cutoff_date = date.fromisoformat(args.date)
+    else:
+        cutoff_date = date.today()
 
     program, students = read_programstudents(args.studentfile)
     results = read_course_results(args.results, cutoff_date)
