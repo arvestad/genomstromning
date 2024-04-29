@@ -27,7 +27,7 @@ build-backend = "setuptools.build_meta"
 
 [project.scripts]
 genomstromning = "genomstromning.main:main"
-
+merits = "genomstromning.merit:main"
 
 [project.urls]
 homepage = "https://github.com/arvestad/genomstromning"
